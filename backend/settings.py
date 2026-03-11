@@ -10,7 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,16 +23,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-k4%c$_n&608j8q@p=q$fb!^oc=j_ie+gfe%5huoqu_c=u7w#6b'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-k4%c$_n&608j8q@p=q$fb!^oc=j_ie+gfe%5huoqu_c=u7w#6b')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get('ALLOWED_HOSTS', '').split(',')
+    if host.strip()
+]
+render_hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if render_hostname and render_hostname not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(render_hostname)
+if DEBUG and '127.0.0.1' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.extend(['127.0.0.1', 'localhost'])
 
 # Google OAuth2 Client ID
 # Users need to replace this with their actual Client ID from Google Cloud Console
-GOOGLE_OAUTH2_CLIENT_ID = '800542912132-5hrt7i7rnsd0hr3ed7v7ea02fobrph5c.apps.googleusercontent.com'
+GOOGLE_OAUTH2_CLIENT_ID = os.environ.get(
+    'GOOGLE_OAUTH2_CLIENT_ID',
+    '800542912132-5hrt7i7rnsd0hr3ed7v7ea02fobrph5c.apps.googleusercontent.com',
+)
 
 # Application definition
 # INSTALLED_APPS lists all Django applications that are enabled in this project
@@ -54,6 +69,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',  # CORS middleware (should be near the top)
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -96,23 +112,19 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # 3. Update the credentials below (NAME, USER, PASSWORD, HOST, PORT)
 # 4. Uncomment the PostgreSQL configuration and comment out SQLite
 
-DATABASES = {
-    # SQLite configuration (for initial development - works out of the box)
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=not DEBUG),
     }
-    
-    # PostgreSQL configuration (for production - uncomment and update credentials)
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': 'resume_analyzer',  # Database name - update this
-    #     'USER': 'your_username',    # PostgreSQL username - update this
-    #     'PASSWORD': 'your_password',  # PostgreSQL password - update this
-    #     'HOST': 'localhost',        # Database host (usually 'localhost')
-    #     'PORT': '5432',             # PostgreSQL default port
-    # }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -149,7 +161,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # CORS (Cross-Origin Resource Sharing) Configuration
@@ -163,8 +182,12 @@ STATIC_URL = 'static/'
 #
 # CORS_ALLOWED_ORIGINS: List of frontend URLs that can access the backend
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Vite default dev server port
-    "http://127.0.0.1:5173",   # Alternative localhost format
+    origin.strip()
+    for origin in os.environ.get(
+        'CORS_ALLOWED_ORIGINS',
+        'http://localhost:5173,http://127.0.0.1:5173',
+    ).split(',')
+    if origin.strip()
 ]
 
 # Allow credentials (cookies, authorization headers) to be sent with requests

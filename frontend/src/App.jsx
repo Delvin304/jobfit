@@ -4,7 +4,6 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import Auth from './components/Auth'
 import Home from './pages/Home'
 
-// Replace this with your actual Google Client ID or load from Vite environment variables
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '800542912132-5hrt7i7rnsd0hr3ed7v7ea02fobrph5c.apps.googleusercontent.com'
 
 /**

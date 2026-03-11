@@ -3,6 +3,9 @@ Django>=4.2.0,<5.0.0
 djangorestframework>=3.14.0
 # PostgreSQL adapter for Python (use psycopg2-binary for easier installation)
 psycopg2-binary>=2.9.0
+dj-database-url>=2.2.0
+gunicorn>=23.0.0
+whitenoise>=6.8.0
 # CORS headers for allowing frontend to communicate with backend
 django-cors-headers>=4.0.0
 
