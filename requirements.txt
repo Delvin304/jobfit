@@ -1,0 +1,16 @@
+# Django and Django REST Framework for building the backend API
+Django>=4.2.0,<5.0.0
+djangorestframework>=3.14.0
+# PostgreSQL adapter for Python (use psycopg2-binary for easier installation)
+psycopg2-binary>=2.9.0
+# CORS headers for allowing frontend to communicate with backend
+django-cors-headers>=4.0.0
+
+# Resume parsing libraries
+pdfplumber>=0.11.0
+python-docx>=1.1.0
+
+# Google Authentication
+google-auth>=2.20.0
+requests>=2.31.0
+reportlab>=4.2.0
