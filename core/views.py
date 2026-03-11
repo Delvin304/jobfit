@@ -300,16 +300,18 @@ class GoogleLoginView(APIView):
         try:
             # Verify the token with Google
             # If you configure GOOGLE_OAUTH2_CLIENT_ID in settings, pass it here: audience=settings.GOOGLE_OAUTH2_CLIENT_ID
-            # For simplicity if not enforcing a single audience, we just verify it exists
-            # Best practice is to enforce audience.
             client_id = getattr(settings, 'GOOGLE_OAUTH2_CLIENT_ID', None)
             
-            idinfo = id_token.verify_oauth2_token(
-                token_str, 
-                google_requests.Request(), 
-                client_id,
-                clock_skew_in_seconds=600  # Allow 10 minutes of clock skew to fix "used too early" error
-            )
+            try:
+                idinfo = id_token.verify_oauth2_token(
+                    token_str, 
+                    google_requests.Request(), 
+                    audience=client_id,
+                    clock_skew_in_seconds=600  # Allow 10 minutes of clock skew to fix "used too early" error
+                )
+            except ValueError as e:
+                # Catch specific token validation errors (like audience mismatch)
+                return Response({'detail': f'Token validation failed: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
 
             # ID token is valid. Get the user's Google Account ID from the decoded token.
             email = idinfo.get('email')
@@ -318,23 +320,27 @@ class GoogleLoginView(APIView):
             if not email:
                 return Response({'detail': 'Email not provided by Google'}, status=status.HTTP_400_BAD_REQUEST)
                 
-            # Find or create the user in Django
-            # Use email as username if username doesn't exist
-            username = email.split('@')[0]
-            
-            user, created = User.objects.get_or_create(email=email, defaults={'username': username})
-            
-            # If created, they have no usable password, which is fine for OAuth only users
-            # Or if username existed but email didn't match, we might need a unique username loop, 
-            # but get_or_create handles the basic case if email is unique.
+            # Find the user by email, or create them
+            try:
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                # If they don't exist, create them. Handle potential username collisions.
+                base_username = email.split('@')[0]
+                username = base_username
+                counter = 1
+                while User.objects.filter(username=username).exists():
+                    username = f"{base_username}{counter}"
+                    counter += 1
+                
+                user = User.objects.create(email=email, username=username)
             
             # Generate or get the DRF token
             drf_token, _ = Token.objects.get_or_create(user=user)
             return Response({"token": drf_token.key, "username": user.username})
             
-        except ValueError as e:
-            # Invalid token
-            return Response({'detail': f'Invalid token: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            # Catch-all for unexpected database or logic errors
+            return Response({'detail': f'Login Error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class DownloadAnalysisReportView(APIView):
