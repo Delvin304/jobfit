@@ -125,14 +125,9 @@ function Home({ username, onLogout }) {
 
       <div className="relative z-20 max-w-6xl mx-auto px-4 py-10">
         <div className="mb-10 flex flex-col items-center text-center">
-          <div className="relative inline-block">
-            <h1 className="text-5xl font-black bg-gradient-to-r from-cyan-300 via-emerald-300 to-sky-300 bg-clip-text text-transparent">
-              JobFit AI
-            </h1>
-            <div className="absolute top-1/2 -translate-y-1/2 -right-20 md:-right-24 z-50">
-              <ChatBot analysisResult={result} />
-            </div>
-          </div>
+          <h1 className="text-5xl font-black bg-gradient-to-r from-cyan-300 via-emerald-300 to-sky-300 bg-clip-text text-transparent">
+            JobFit AI
+          </h1>
           <p className="text-slate-300 mt-3">ATS Resume Analyzer with AI Career Assistant</p>
         </div>
 
@@ -229,6 +224,8 @@ function Home({ username, onLogout }) {
           </div>
         )}
       </div>
+
+      <ChatBot analysisResult={result} />
     </div>
   )
 }
