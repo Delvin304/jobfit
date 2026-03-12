@@ -12,7 +12,7 @@ if (Test-Path "package.json") {
     Write-Host "Found package.json" -ForegroundColor Green
     Write-Host "Starting development server..." -ForegroundColor Cyan
     Write-Host ""
-    npm run dev
+    cmd /c npm run dev
 } else {
     Write-Host "Error: package.json not found!" -ForegroundColor Red
     Write-Host "Make sure you are in the frontend directory." -ForegroundColor Yellow

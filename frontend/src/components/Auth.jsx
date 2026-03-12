@@ -29,7 +29,7 @@ function Auth({ onAuth }) {
       setPassword('')
       setEmail('')
     } catch (err) {
-      let msg = 'Authentication failed'
+      let msg = err.message || 'Authentication failed'
 
       // Try to extract detailed error message from backend response
       if (err.response?.data?.detail) {
@@ -131,7 +131,7 @@ function Auth({ onAuth }) {
                   localStorage.setItem('username', data.username)
                   onAuth(data.token, data.username)
                 } catch (err) {
-                  let msg = 'Google login failed'
+                  let msg = err.message || 'Google login failed'
                   if (err.response?.data?.detail) msg = err.response.data.detail
                   setError(msg)
                   console.error('Google login error:', err)

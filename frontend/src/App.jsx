@@ -4,7 +4,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import Auth from './components/Auth'
 import Home from './pages/Home'
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '800542912132-5hrt7i7rnsd0hr3ed7v7ea02fobrph5c.apps.googleusercontent.com'
+const GOOGLE_CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim()
 
 /**
  * App Component (Root Component)
@@ -41,6 +41,19 @@ function App() {
 
   // if there's no token, show authentication form
   if (!token) {
+    if (!GOOGLE_CLIENT_ID) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-purple-900 to-slate-950 px-6">
+          <div className="w-full max-w-lg p-8 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-lg text-white">
+            <h1 className="text-2xl font-bold mb-4 text-center">Google auth is not configured</h1>
+            <p className="text-sm text-slate-200 text-center">
+              Set <code>VITE_GOOGLE_CLIENT_ID</code> in the frontend environment and redeploy Vercel.
+            </p>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
         <Auth onAuth={handleAuth} />

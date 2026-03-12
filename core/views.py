@@ -298,20 +298,35 @@ class GoogleLoginView(APIView):
             return Response({'detail': 'Token is required'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Verify the token with Google
-            # If you configure GOOGLE_OAUTH2_CLIENT_ID in settings, pass it here: audience=settings.GOOGLE_OAUTH2_CLIENT_ID
-            client_id = getattr(settings, 'GOOGLE_OAUTH2_CLIENT_ID', None)
+            configured_client_ids = {
+                client_id.strip()
+                for client_id in (
+                    getattr(settings, 'GOOGLE_OAUTH2_CLIENT_ID', '') or ''
+                ).split(',')
+                if client_id.strip()
+            }
             
             try:
                 idinfo = id_token.verify_oauth2_token(
                     token_str, 
                     google_requests.Request(), 
-                    audience=client_id,
                     clock_skew_in_seconds=600  # Allow 10 minutes of clock skew to fix "used too early" error
                 )
             except ValueError as e:
                 # Catch specific token validation errors (like audience mismatch)
                 return Response({'detail': f'Token validation failed: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+
+            token_audience = idinfo.get('aud')
+            if configured_client_ids and token_audience not in configured_client_ids:
+                return Response(
+                    {
+                        'detail': (
+                            'Token audience does not match the configured Google OAuth client ID. '
+                            'Check VITE_GOOGLE_CLIENT_ID on Vercel and GOOGLE_OAUTH2_CLIENT_ID on Render.'
+                        )
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             # ID token is valid. Get the user's Google Account ID from the decoded token.
             email = idinfo.get('email')

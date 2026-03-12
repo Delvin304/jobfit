@@ -12,7 +12,16 @@ if (Test-Path "manage.py") {
     Write-Host "Found manage.py" -ForegroundColor Green
     Write-Host "Starting server at http://127.0.0.1:8000/" -ForegroundColor Cyan
     Write-Host ""
-    python manage.py runserver
+
+    $pythonCmd = "python"
+    if (Test-Path ".\.venv\Scripts\python.exe") {
+        $pythonCmd = ".\.venv\Scripts\python.exe"
+        Write-Host "Using project virtual environment Python" -ForegroundColor Green
+    } else {
+        Write-Host "Using system Python" -ForegroundColor Yellow
+    }
+
+    & $pythonCmd manage.py runserver 127.0.0.1:8000
 } else {
     Write-Host "Error: manage.py not found!" -ForegroundColor Red
     Write-Host "Make sure you are in the correct directory." -ForegroundColor Yellow

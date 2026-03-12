@@ -13,9 +13,12 @@ import axios from 'axios'
  * In production, this would be an environment variable
  */
 
+const configuredApiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim()
+const apiBaseUrl = configuredApiBaseUrl || (import.meta.env.DEV ? 'http://127.0.0.1:8000/api/' : '/api/')
+
 // create instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/',
+  baseURL: apiBaseUrl,
   timeout: 30000, // 30 seconds timeout for file uploads
 })
 
@@ -27,6 +30,18 @@ api.interceptors.request.use((config) => {
   }
   return config
 })
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (!error.response) {
+      error.message = import.meta.env.PROD
+        ? 'Cannot reach the backend. Set VITE_API_BASE_URL on Vercel to your Render backend URL ending with /api/.'
+        : 'Cannot reach the backend at http://127.0.0.1:8000/api/. Start the Django server and try again.'
+    }
+    return Promise.reject(error)
+  }
+)
 
 /**
  * Register a new user
